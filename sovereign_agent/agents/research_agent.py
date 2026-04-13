@@ -69,7 +69,7 @@ load_dotenv()
 llm = ChatOpenAI(
     base_url="https://api.tokenfactory.nebius.com/v1/",
     api_key=os.getenv("NEBIUS_KEY"),
-    model="meta-llama/Llama-3.3-70B-Instruct",
+    model="Qwen/Qwen3-32B-fast",
     temperature=0,
 )
 
@@ -90,6 +90,7 @@ _agent = create_react_agent(llm, TOOLS)
 
 
 # ─── Public interface ─────────────────────────────────────────────────────────
+
 
 def run_research_agent(task: str, max_turns: int = 8) -> dict:
     """
@@ -115,14 +116,14 @@ def run_research_agent(task: str, max_turns: int = 8) -> dict:
     )
 
     tool_calls_made = []
-    full_trace      = []
-    final_answer    = ""
+    full_trace = []
+    final_answer = ""
 
     for m in result["messages"]:
-        role    = getattr(m, "type", "unknown")
+        role = getattr(m, "type", "unknown")
         content = m.content
 
-        # Tool-call messages have structured list content
+        # Anthropic-style: structured list content with tool_use blocks
         if isinstance(content, list):
             for block in content:
                 if isinstance(block, dict) and block.get("type") == "tool_use":
@@ -134,14 +135,23 @@ def run_research_agent(task: str, max_turns: int = 8) -> dict:
                     full_trace.append({"role": "tool_call", **entry})
             continue
 
+        # OpenAI-style: tool_calls lives on the message, content may be empty
+        for tc in getattr(m, "tool_calls", None) or []:
+            entry = {
+                "tool": tc.get("name") if isinstance(tc, dict) else tc.name,
+                "args": (tc.get("args") if isinstance(tc, dict) else tc.args) or {},
+            }
+            tool_calls_made.append(entry)
+            full_trace.append({"role": "tool_call", **entry})
+
         if content:
             full_trace.append({"role": role, "content": str(content)})
             if role == "ai":
                 final_answer = str(content)
 
     return {
-        "final_answer":    final_answer,
+        "final_answer": final_answer,
         "tool_calls_made": tool_calls_made,
-        "full_trace":      full_trace,
-        "success":         bool(final_answer),
+        "full_trace": full_trace,
+        "success": bool(final_answer),
     }

@@ -110,8 +110,35 @@ ACCEPTABLE = {"haymarket", "albanach"}
 # Attention "blurs" adjacent similar items. The closer the distractor to the
 # correct answer, the harder it is to discriminate between them.
 
-VENUES_WITH_DISTRACTORS = """\
-The Albanach: capacity=180, vegan=yes, status=available
+VENUES_WITH_DISTRACTORS = (
+    """\
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
+The Holyrood Arms: capacity=160, vegan=yes, status=full
+"""
+    * 3
+    + """\
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
 The Bow Bar: capacity=80, vegan=yes, status=full
 The Guilford Arms: capacity=200, vegan=no, status=available
 The Hanging Bat: capacity=70, vegan=yes, status=available
@@ -120,7 +147,32 @@ The Holyrood Arms: capacity=160, vegan=yes, status=full
 The Haymarket Vaults: capacity=160, vegan=yes, status=available
 The Grain Store: capacity=170, vegan=no, status=available
 The Ensign Ewart: capacity=120, vegan=yes, status=available
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
+The Bow Bar: capacity=80, vegan=yes, status=full
+The Guilford Arms: capacity=200, vegan=no, status=available
+The Hanging Bat: capacity=70, vegan=yes, status=available
+The New Town Vault: capacity=162, vegan=no, status=available
 """
+)
 
 # ─── Presentation format builders ─────────────────────────────────────────────
 #
@@ -136,23 +188,20 @@ The Ensign Ewart: capacity=120, vegan=yes, status=available
 #           The query reminder at the bottom pulls attention back to the task
 #           after the model has read through all the venue data.
 
+
 def build_plain(venues: str, question: str) -> str:
     return f"{venues}\nQuestion: {question}"
 
 
 def build_xml(venues: str, question: str) -> str:
     lines = venues.strip().splitlines()
-    tags  = "\n".join(
-        f'  <venue id="{i+1}">{line}</venue>' for i, line in enumerate(lines)
-    )
+    tags = "\n".join(f'  <venue id="{i + 1}">{line}</venue>' for i, line in enumerate(lines))
     return f"<query>{question}</query>\n<venues>\n{tags}\n</venues>\n"
 
 
 def build_sandwich(venues: str, question: str) -> str:
     lines = venues.strip().splitlines()
-    tags  = "\n".join(
-        f'  <venue id="{i+1}">{line}</venue>' for i, line in enumerate(lines)
-    )
+    tags = "\n".join(f'  <venue id="{i + 1}">{line}</venue>' for i, line in enumerate(lines))
     return (
         f"<query>{question}</query>\n"
         f"<venues>\n{tags}\n</venues>\n"
@@ -162,17 +211,18 @@ def build_sandwich(venues: str, question: str) -> str:
 
 # ─── API helper ───────────────────────────────────────────────────────────────
 
+
 def ask(prompt: str, model: str) -> dict:
     resp = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=60,
-        temperature=0,   # deterministic — test the model's best answer, not a sample
+        temperature=0,  # deterministic — test the model's best answer, not a sample
     )
     return {
         "answer": resp.choices[0].message.content.strip(),
         "tokens": resp.usage.total_tokens,
-        "model":  model,
+        "model": model,
     }
 
 
@@ -182,7 +232,7 @@ def is_correct(answer: str) -> bool:
 
 # ─── Part A ───────────────────────────────────────────────────────────────────
 
-MAIN_MODEL  = "meta-llama/Llama-3.3-70B-Instruct"
+MAIN_MODEL = "meta-llama/Llama-3.3-70B-Instruct"
 SMALL_MODEL = "meta-llama/Meta-Llama-3.1-8B-Instruct"
 
 
@@ -193,18 +243,18 @@ def run_part(label: str, venues: str, model: str) -> dict:
     print(f"{'=' * 60}\n")
 
     conditions = {
-        "PLAIN":    build_plain(venues, QUESTION),
-        "XML":      build_xml(venues, QUESTION),
+        "PLAIN": build_plain(venues, QUESTION),
+        "XML": build_xml(venues, QUESTION),
         "SANDWICH": build_sandwich(venues, QUESTION),
     }
     results = {}
     for name, prompt in conditions.items():
         r = ask(prompt, model)
-        r["correct"]   = is_correct(r["answer"])
+        r["correct"] = is_correct(r["answer"])
         r["condition"] = name
-        results[name]  = r
+        results[name] = r
         icon = "✅" if r["correct"] else "❌"
-        print(f"  [{name:<8}] {icon}  →  \"{r['answer']}\"  ({r['tokens']} tokens)")
+        print(f'  [{name:<8}] {icon}  →  "{r["answer"]}"  ({r["tokens"]} tokens)')
     return results
 
 
@@ -222,6 +272,7 @@ def print_part_summary(results: dict) -> None:
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     print("Exercise 1 — Context Engineering Benchmark")
     print("Three parts. ~2 minutes total.\n")
@@ -229,7 +280,9 @@ def main() -> None:
     results_a = run_part("PART A — Baseline Dataset", VENUES_BASELINE, MAIN_MODEL)
     print_part_summary(results_a)
 
-    results_b = run_part("PART B — Near-Miss Distractors Added", VENUES_WITH_DISTRACTORS, MAIN_MODEL)
+    results_b = run_part(
+        "PART B — Near-Miss Distractors Added", VENUES_WITH_DISTRACTORS, MAIN_MODEL
+    )
     print_part_summary(results_b)
 
     a_all = all(r["correct"] for r in results_a.values())
@@ -247,19 +300,17 @@ def main() -> None:
         print("\n  → Structural differences already visible. Skipping Part C.")
 
     output = {
-        "model_main":  MAIN_MODEL,
+        "model_main": MAIN_MODEL,
         "model_small": SMALL_MODEL,
-        "part_a":      results_a,
-        "part_b":      results_b,
+        "part_a": results_a,
+        "part_b": results_b,
         "part_c_was_run": run_c,
-        "part_c":      results_c,
+        "part_c": results_c,
         "summary": {
             "part_a_all_correct": a_all,
             "part_b_all_correct": b_all,
             "structural_effect_seen_in": (
-                "none_see_part_c" if (a_all and b_all)
-                else "part_a" if not a_all
-                else "part_b"
+                "none_see_part_c" if (a_all and b_all) else "part_a" if not a_all else "part_b"
             ),
         },
     }

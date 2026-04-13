@@ -44,6 +44,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from pydantic import Field, create_model
 
 load_dotenv()
 
@@ -63,6 +64,30 @@ OUTPUTS_DIR.mkdir(exist_ok=True)
 # Why a factory function and not a lambda?
 # Each closure must capture its own tool_name. If we used a lambda in a loop,
 # every closure would share the last value of tool_name — a classic Python gotcha.
+
+_JSON_TYPE_MAP = {
+    "string": str,
+    "integer": int,
+    "number": float,
+    "boolean": bool,
+    "array": list,
+    "object": dict,
+}
+
+
+def _schema_from_input_schema(tool_name: str, input_schema: dict):
+    """Build a pydantic model from an MCP tool's JSON inputSchema."""
+    props = (input_schema or {}).get("properties", {}) or {}
+    required = set((input_schema or {}).get("required", []) or [])
+    fields = {}
+    for pname, pspec in props.items():
+        ptype = _JSON_TYPE_MAP.get(pspec.get("type", "string"), str)
+        default = ... if pname in required else pspec.get("default", None)
+        fields[pname] = (ptype, Field(default, description=pspec.get("description", "")))
+    if not fields:
+        return None
+    return create_model(f"{tool_name}_Args", **fields)
+
 
 def _make_mcp_caller(tool_name: str, server_script: str):
     def call(**kwargs) -> str:
@@ -93,10 +118,12 @@ async def discover_tools(server_script: str) -> list:
             raw   = await session.list_tools()
             tools = []
             for t in raw.tools:
-                lc_tool = StructuredTool.from_function(
-                    func=_make_mcp_caller(t.name, server_script),
+                args_schema = _schema_from_input_schema(t.name, t.inputSchema)
+                lc_tool = StructuredTool(
                     name=t.name,
                     description=t.description or f"MCP tool: {t.name}",
+                    func=_make_mcp_caller(t.name, server_script),
+                    args_schema=args_schema,
                 )
                 tools.append(lc_tool)
             return tools, [t.name for t in raw.tools]
@@ -135,7 +162,7 @@ async def main() -> None:
     llm = ChatOpenAI(
         base_url="https://api.tokenfactory.nebius.com/v1/",
         api_key=os.getenv("NEBIUS_KEY"),
-        model="meta-llama/Llama-3.3-70B-Instruct",
+        model="Qwen/Qwen3-32B-fast",
         temperature=0,
     )
 

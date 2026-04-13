@@ -45,7 +45,7 @@ CONVERSATION_1_TRACE = """
 PASTE YOUR rasa shell TERMINAL OUTPUT HERE
 """
 
-CONVERSATION_1_OUTCOME = "FILL_ME_IN"   # "confirmed" or "escalated"
+CONVERSATION_1_OUTCOME = "FILL_ME_IN"  # "confirmed" or "escalated"
 
 # ── Conversation 2: Deposit too high ───────────────────────────────────────
 
@@ -53,8 +53,8 @@ CONVERSATION_2_TRACE = """
 PASTE YOUR rasa shell TERMINAL OUTPUT HERE
 """
 
-CONVERSATION_2_OUTCOME = "FILL_ME_IN"   # "confirmed" or "escalated"
-CONVERSATION_2_REASON  = "FILL_ME_IN"   # the reason the agent gave for escalating
+CONVERSATION_2_OUTCOME = "FILL_ME_IN"  # "confirmed" or "escalated"
+CONVERSATION_2_REASON = "FILL_ME_IN"  # the reason the agent gave for escalating
 
 # ── Conversation 3: Out of scope ───────────────────────────────────────────
 
@@ -75,7 +75,7 @@ FILL ME IN
 
 # ── Task B: Cutoff guard ───────────────────────────────────────────────────
 
-TASK_B_DONE = None   # True or False
+TASK_B_DONE = None  # True or False
 
 # List every file you changed.
 TASK_B_FILES_CHANGED = []
